@@ -1,0 +1,111 @@
+/* Noto Sans Khmer CSS classes */
+.noto-sans-khmer-regular {
+  font-family: "Noto Sans Khmer", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.noto-sans-khmer-medium {
+  font-family: "Noto Sans Khmer", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.noto-sans-khmer-bold {
+  font-family: "Noto Sans Khmer", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+  font-variation-settings: "wdth" 79.4;
+}
+
+/* Hanuman CSS classes */
+.hanuman-regular {
+  font-family: "Hanuman", serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.hanuman-medium {
+  font-family: "Hanuman", serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.hanuman-bold {
+  font-family: "Hanuman", serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Global font settings */
+* {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+body {
+  font-family: "Noto Sans Khmer", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings: "wdth" 79.4;
+}
+
+/* Override Material-UI typography */
+.MuiTypography-root {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.MuiButton-root {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.MuiTableCell-root {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.MuiInputLabel-root {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.MuiInputBase-input {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.MuiTab-root {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.MuiMenuItem-root {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.MuiChip-label {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.MuiListItemText-primary {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
+
+.MuiDialogTitle-root {
+  font-family: "Noto Sans Khmer", sans-serif !important;
+  font-variation-settings: "wdth" 79.4;
+}
