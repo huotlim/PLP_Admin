@@ -7,34 +7,34 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 // project imports
-import SalesChart from 'sections/dashboard/SalesChart';
+import BooksChart from 'sections/dashboard/BooksChart';
 
-// sales report status
+// book report status
 const status = [
   {
-    value: 'today',
-    label: 'Today'
+    value: 'week',
+    label: 'This Week'
   },
   {
     value: 'month',
     label: 'This Month'
   },
   {
-    value: 'year',
-    label: 'This Year'
+    value: 'quarter',
+    label: 'This Quarter'
   }
 ];
 
-// ==============================|| DEFAULT - SALES REPORT ||============================== //
+// ==============================|| DEFAULT - BOOK REPORT ||============================== //
 
-export default function SaleReportCard() {
-  const [value, setValue] = useState('today');
+export default function ResourceReportCard() {
+  const [value, setValue] = useState('week');
 
   return (
     <>
       <Grid container sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
         <Grid>
-          <Typography variant="h5">Sales Report</Typography>
+          <Typography variant="h5">Books Created vs Lost</Typography>
         </Grid>
         <Grid>
           <TextField
@@ -53,7 +53,7 @@ export default function SaleReportCard() {
           </TextField>
         </Grid>
       </Grid>
-      <SalesChart />
+      <BooksChart period={value} />
     </>
   );
 }

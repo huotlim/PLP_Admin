@@ -30,18 +30,6 @@ export default function ProfileTab({ handleLogout }) {
         <ListItemText primary="View Profile" />
       </ListItemButton>
 
-      <ListItemButton>
-        <ListItemIcon>
-          <ProfileOutlined />
-        </ListItemIcon>
-        <ListItemText primary="Social Profile" />
-      </ListItemButton>
-      <ListItemButton>
-        <ListItemIcon>
-          <WalletOutlined />
-        </ListItemIcon>
-        <ListItemText primary="Billing" />
-      </ListItemButton>
       <ListItemButton onClick={handleLogout}>
         <ListItemIcon>
           <LogoutOutlined />

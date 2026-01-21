@@ -31,7 +31,7 @@ export default function HeaderContent() {
         title="Download Free Version"
         sx={{ color: 'text.primary', bgcolor: 'grey.100' }}
       >
-        <GithubOutlined />
+        {/* <GithubOutlined /> */}
       </IconButton>
 
       <Notification />
