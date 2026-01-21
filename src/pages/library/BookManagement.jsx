@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Box, IconButton, Chip, Select, MenuItem, FormControl, InputLabel
+  TextField, Box, IconButton, Chip, Select, MenuItem, FormControl, InputLabel,
+  CircularProgress, Alert, Typography
 } from '@mui/material';
 import { EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import MainCard from 'components/MainCard';
+import { booksApi } from 'api/books';
+import { categoriesApi } from 'api/categories';
 
 // Khmer font styles
 const khmerFontStyles = {
@@ -13,49 +16,58 @@ const khmerFontStyles = {
   fontWeight: 400
 };
 
-const initialBooks = [
-  { 
-    id: 1, 
-    title: 'ប្រលោមលោក អាមេរិកាំង', 
-    author: 'អ៊ឹម ចាន់ណា', 
-    isbn: '978-0-7432-7356-5',
-    category: 'ប្រលោមលោក',
-    status: 'មាន',
-    copies: 3
-  },
-  { 
-    id: 2, 
-    title: 'ការណែនាំអំពី Algorithms', 
-    author: 'ថូម៉ាស់ កម៉ែន', 
-    isbn: '978-0-262-03384-8',
-    category: 'បច្ចេកវិទ្យា',
-    status: 'ខ្ចី',
-    copies: 2
-  },
-  { 
-    id: 3, 
-    title: 'ប្រវត្តិសាស្ត្រ និងពេលវេលា', 
-    author: 'ស្ទីវ ហាគីង', 
-    isbn: '978-0-553-38016-3',
-    category: 'វិទ្យាសាស្ត្រ',
-    status: 'មាន',
-    copies: 4
-  }
-];
-
-const categories = ['ប្រលោមលោក', 'វិទ្យាសាស្ត្រ', 'ប្រវត្តិសាស្ត្រ', 'បច្ចេកវិទ្យា', 'ជីវប្រវត្តិ'];
-
 export default function BookManagement() {
-  const [books, setBooks] = useState(initialBooks);
+  const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
   const [formData, setFormData] = useState({
-    title: '', author: '', isbn: '', category: '', copies: 1
+    title: '', author: '', isbn: '', categoryId: '', totalCopies: 1, availableQuantity: 1
   });
+
+  // Load books and categories from API
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [booksData, categoriesData] = await Promise.all([
+        booksApi.getBooks(),
+        categoriesApi.getCategories()
+      ]);
+      
+      setBooks(booksData);
+      setCategories(categoriesData);
+    } catch (err) {
+      let errorMessage = 'Failed to load data';
+      
+      if (err.message.includes('Unauthorized')) {
+        errorMessage = 'Session expired. Please login again.';
+      }
+      
+      setError(errorMessage);
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateBook = () => {
     setEditingBook(null);
-    setFormData({ title: '', author: '', isbn: '', category: '', copies: 1 });
+    setFormData({ 
+      title: '', 
+      author: '', 
+      isbn: '', 
+      categoryId: '', 
+      totalCopies: 1, 
+      availableQuantity: 1 
+    });
     setOpen(true);
   };
 
@@ -65,40 +77,89 @@ export default function BookManagement() {
       title: book.title,
       author: book.author,
       isbn: book.isbn,
-      category: book.category,
-      copies: book.copies
+      categoryId: book.category?.id || '',
+      totalCopies: book.totalCopies,
+      availableQuantity: book.availableQuantity
     });
     setOpen(true);
   };
 
-  const handleSaveBook = () => {
-    if (editingBook) {
-      setBooks(books.map(book => 
-        book.id === editingBook.id 
-          ? { ...book, ...formData, status: book.status }
-          : book
-      ));
-    } else {
-      setBooks([...books, { 
-        ...formData, 
-        id: Date.now(), 
-        status: 'Available'
-      }]);
+  const handleSaveBook = async () => {
+    try {
+      if (!formData.title || !formData.author || !formData.isbn || !formData.categoryId) {
+        setError('Please fill in all required fields');
+        return;
+      }
+
+      const bookData = {
+        title: formData.title,
+        author: formData.author,
+        isbn: formData.isbn,
+        categoryId: parseInt(formData.categoryId),
+        totalCopies: parseInt(formData.totalCopies),
+        availableQuantity: parseInt(formData.availableQuantity)
+      };
+
+      if (editingBook) {
+        await booksApi.updateBook(editingBook.id, bookData);
+      } else {
+        await booksApi.createBook(bookData);
+      }
+      
+      await loadInitialData(); // Reload data after save
+      setOpen(false);
+    } catch (err) {
+      setError('Failed to save book');
+      console.error('Error saving book:', err);
     }
-    setOpen(false);
   };
 
-  const handleDeleteBook = (bookId) => {
-    setBooks(books.filter(book => book.id !== bookId));
+  const handleDeleteBook = async (bookId) => {
+    try {
+      await booksApi.deleteBook(bookId);
+      await loadInitialData(); // Reload data after deletion
+    } catch (err) {
+      setError('Failed to delete book');
+      console.error('Error deleting book:', err);
+    }
   };
 
-  const getStatusColor = (status) => {
-    return status === 'មាន' ? 'success' : 'warning';
+  const getStatusColor = (book) => {
+    return book.availableQuantity > 0 ? 'success' : 'warning';
   };
+
+  const getStatusText = (book) => {
+    return book.availableQuantity > 0 ? 'មាន' : 'អស់';
+  };
+
+  if (loading) {
+    return (
+      <div style={khmerFontStyles}>
+        <MainCard title="ការគ្រប់គ្រងសៀវភៅ">
+          <Box display="flex" justifyContent="center" p={3}>
+            <CircularProgress />
+          </Box>
+        </MainCard>
+      </div>
+    );
+  }
 
   return (
     <div style={khmerFontStyles}>
       <MainCard title="ការគ្រប់គ្រងសៀវភៅ">
+        {error && (
+          <Alert severity="error" sx={{ mb: 2, ...khmerFontStyles }}>
+            {error}
+            <Button 
+              size="small" 
+              sx={{ mt: 1, ...khmerFontStyles }} 
+              onClick={loadInitialData}
+            >
+              ព្យាយាមម្តងទៀត
+            </Button>
+          </Alert>
+        )}
+
         <Box sx={{ mb: 2 }}>
           <Button variant="contained" onClick={handleCreateBook} sx={khmerFontStyles}>
             បន្ថែមសៀវភៅថ្មី
@@ -113,7 +174,8 @@ export default function BookManagement() {
                 <TableCell sx={khmerFontStyles}>អ្នកនិពន្ធ</TableCell>
                 <TableCell sx={khmerFontStyles}>ISBN</TableCell>
                 <TableCell sx={khmerFontStyles}>ប្រភេទ</TableCell>
-                <TableCell sx={khmerFontStyles}>ចំនួនក្បាល</TableCell>
+                <TableCell sx={khmerFontStyles}>ចំនួនសរុប</TableCell>
+                <TableCell sx={khmerFontStyles}>ចំនួនអាច</TableCell>
                 <TableCell sx={khmerFontStyles}>ស្ថានភាព</TableCell>
                 <TableCell sx={khmerFontStyles}>សកម្មភាព</TableCell>
               </TableRow>
@@ -124,12 +186,15 @@ export default function BookManagement() {
                   <TableCell sx={khmerFontStyles}>{book.title}</TableCell>
                   <TableCell sx={khmerFontStyles}>{book.author}</TableCell>
                   <TableCell>{book.isbn}</TableCell>
-                  <TableCell sx={khmerFontStyles}>{book.category}</TableCell>
-                  <TableCell>{book.copies}</TableCell>
+                  <TableCell sx={khmerFontStyles}>
+                    {book.category ? book.category.name : 'មិនកំណត់'}
+                  </TableCell>
+                  <TableCell>{book.totalCopies}</TableCell>
+                  <TableCell>{book.availableQuantity}</TableCell>
                   <TableCell>
                     <Chip 
-                      label={book.status} 
-                      color={getStatusColor(book.status)} 
+                      label={getStatusText(book)} 
+                      color={getStatusColor(book)} 
                       size="small"
                       sx={khmerFontStyles}
                     />
@@ -175,6 +240,7 @@ export default function BookManagement() {
                   '& .MuiInputLabel-root': khmerFontStyles,
                   '& .MuiInputBase-input': khmerFontStyles
                 }}
+                required
               />
               <TextField
                 label="អ្នកនិពន្ធ"
@@ -184,6 +250,7 @@ export default function BookManagement() {
                   '& .MuiInputLabel-root': khmerFontStyles,
                   '& .MuiInputBase-input': khmerFontStyles
                 }}
+                required
               />
               <TextField
                 label="ISBN"
@@ -192,29 +259,40 @@ export default function BookManagement() {
                 sx={{
                   '& .MuiInputLabel-root': khmerFontStyles
                 }}
+                required
               />
-              <FormControl>
+              <FormControl required>
                 <InputLabel sx={khmerFontStyles}>ប្រភេទ</InputLabel>
                 <Select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                   sx={{
                     '& .MuiSelect-select': khmerFontStyles
                   }}
                 >
                   {categories.map((category) => (
-                    <MenuItem key={category} value={category} sx={khmerFontStyles}>
-                      {category}
+                    <MenuItem key={category.id} value={category.id} sx={khmerFontStyles}>
+                      {category.name}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
               <TextField
-                label="ចំនួនក្បាល"
+                label="ចំនួនសរុប"
                 type="number"
-                value={formData.copies}
-                onChange={(e) => setFormData({ ...formData, copies: parseInt(e.target.value) })}
+                value={formData.totalCopies}
+                onChange={(e) => setFormData({ ...formData, totalCopies: parseInt(e.target.value) || 1 })}
                 inputProps={{ min: 1 }}
+                sx={{
+                  '& .MuiInputLabel-root': khmerFontStyles
+                }}
+              />
+              <TextField
+                label="ចំនួនអាចប្រើបាន"
+                type="number"
+                value={formData.availableQuantity}
+                onChange={(e) => setFormData({ ...formData, availableQuantity: parseInt(e.target.value) || 1 })}
+                inputProps={{ min: 0 }}
                 sx={{
                   '& .MuiInputLabel-root': khmerFontStyles
                 }}
@@ -224,7 +302,7 @@ export default function BookManagement() {
           <DialogActions>
             <Button onClick={() => setOpen(false)} sx={khmerFontStyles}>បោះបង់</Button>
             <Button onClick={handleSaveBook} variant="contained" sx={khmerFontStyles}>
-              {editingBook ? 'ធ្វើបច្ចុប្បន្នភាព' : 'បន្ថែម'} សៀវភៅ
+              {editingBook ? 'ធ្វើបច្ចុប្បន្នភាព' : 'បន្ថែម'}
             </Button>
           </DialogActions>
         </Dialog>

@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Paper, Typography, Box, Chip, Button, Dialog, DialogTitle, 
-  DialogContent, DialogActions, TextField
+  DialogContent, DialogActions, TextField, CircularProgress, Alert
 } from '@mui/material';
 import MainCard from 'components/MainCard';
+import { permissionsApi } from 'api/permissions';
+import { rolesApi } from 'api/roles';
 
 // Khmer font styles
 const khmerFontStyles = {
@@ -12,65 +14,138 @@ const khmerFontStyles = {
   fontWeight: 400
 };
 
-const initialPermissions = [
-  { id: 1, name: 'អាន', description: 'មើលខ្លឹមសារ', category: 'ខ្លឹមសារ' },
-  { id: 2, name: 'សរសេរ', description: 'បង្កើត និង កែសម្រួលខ្លឹមសារ', category: 'ខ្លឹមសារ' },
-  { id: 3, name: 'លុប', description: 'លុបខ្លឹមសារ', category: 'ខ្លឹមសារ' },
-  { id: 4, name: 'កែសម្រួល', description: 'កែសម្រួលព័ត៌មាន', category: 'ខ្លឹមសារ' },
-  { id: 5, name: 'គ្រប់គ្រងអ្នកប្រើប្រាស់', description: 'គ្រប់គ្រងគណនីអ្នកប្រើប្រាស់', category: 'គ្រប់គ្រងអ្នកប្រើ' },
-  { id: 6, name: 'គ្រប់គ្រងបណ្ណាល័យ', description: 'គ្រប់គ្រងប្រព័ន្ធបណ្ណាល័យ', category: 'បណ្ណាល័យ' },
-  { id: 7, name: 'គ្រប់គ្រងមុខវិជ្ជា', description: 'គ្រប់គ្រងមុខវិជ្ជាសិក្សា', category: 'ការសិក្សា' },
-  { id: 8, name: 'គ្រប់គ្រងដ្ឋាន', description: 'គ្រប់គ្រងនាយកដ្ឋាន', category: 'រដ្ឋបាល' },
-  { id: 9, name: 'គ្រប់គ្រងកម្មវិធី', description: 'គ្រប់គ្រងកម្មវិធីសិក្សា', category: 'ការសិក្សា' },
-  { id: 10, name: 'គ្រប់គ្រងប្រព័ន្ធ', description: 'គ្រប់គ្រងប្រព័ន្ធ ICT', category: 'បច្ចេកវិទ្យា' }
-];
-
-const rolePermissions = {
-  'គ្រប់គ្រង': ['អាន', 'សរសេរ', 'លុប', 'កែសម្រួល', 'គ្រប់គ្រងអ្នកប្រើប្រាស់', 'គ្រប់គ្រងបណ្ណាល័យ', 'គ្រប់គ្រងមុខវិជ្ជា', 'គ្រប់គ្រងដ្ឋាន', 'គ្រប់គ្រងកម្មវិធី', 'គ្រប់គ្រងប្រព័ន្ធ'],
-  'សិស្ស': ['អាន', 'សរសេរ'],
-  'អាណាព្យាបាល': ['អាន'],
-  'អ្នកបញ្ចប់ការសិក្សា': ['អាន'],
-  'គ្រូបង្រៀន': ['អាន', 'សរសេរ', 'កែសម្រួល'],
-  'អ្នកគ្រប់គ្រងមុខវិជ្ជា': ['អាន', 'សរសេរ', 'កែសម្រួល', 'គ្រប់គ្រងមុខវិជ្ជា'],
-  'អ្នកគ្រប់គ្រងបណ្ណាល័យ ក្រុម ២០២៤': ['អាន', 'សរសេរ', 'គ្រប់គ្រងបណ្ណាល័យ'],
-  'អ្នកគ្រប់គ្រងបណ្ណាល័យកម្រាលការ': ['អាន', 'សរសេរ', 'គ្រប់គ្រងបណ្ណាល័យ'],
-  'កម្មករក្រុម អនុវត្ត': ['អាន', 'សរសេរ'],
-  'ឧបករណ៍ព័ត៌មាន': ['អាន', 'សរសេរ', 'គ្រប់គ្រងកម្មវិធី'],
-  'នាយកដ្ឋាន': ['អាន', 'សរសេរ', 'កែសម្រួល', 'គ្រប់គ្រងដ្ឋាន'],
-  'បណ្ណាល័យ': ['អាន', 'សរសេរ', 'គ្រប់គ្រងបណ្ណាល័យ'],
-  'ICT': ['អាន', 'សរសេរ', 'កែសម្រួល', 'គ្រប់គ្រងប្រព័ន្ធ']
-};
-
 export default function PermissionManagement() {
-  const [permissions, setPermissions] = useState(initialPermissions);
+  const [permissions, setPermissions] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
+  const [editingPermission, setEditingPermission] = useState(null);
   const [newPermission, setNewPermission] = useState({ name: '', description: '', category: '' });
 
+  // Load permissions and roles from API
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [permissionsData, rolesData] = await Promise.all([
+        permissionsApi.getPermissions(),
+        rolesApi.getRoles()
+      ]);
+      
+      setPermissions(permissionsData);
+      setRoles(rolesData);
+    } catch (err) {
+      let errorMessage = 'Failed to load data';
+      
+      if (err.message.includes('Unauthorized')) {
+        errorMessage = 'Session expired. Please login again.';
+      }
+      
+      setError(errorMessage);
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPermissions = async () => {
+    try {
+      setError(null);
+      const data = await permissionsApi.getPermissions();
+      setPermissions(data);
+    } catch (err) {
+      setError('Failed to load permissions');
+      console.error('Error loading permissions:', err);
+    }
+  };
+
   const getRolesWithPermission = (permissionName) => {
-    return Object.entries(rolePermissions)
-      .filter(([role, perms]) => perms.includes(permissionName))
-      .map(([role]) => role);
+    return roles
+      .filter(role => role.permissions && role.permissions.includes(permissionName))
+      .map(role => role.name);
   };
 
   const handleAddPermission = () => {
+    setEditingPermission(null);
     setNewPermission({ name: '', description: '', category: '' });
     setOpen(true);
   };
 
-  const handleSavePermission = () => {
-    if (newPermission.name && newPermission.description && newPermission.category) {
-      setPermissions([...permissions, { ...newPermission, id: Date.now() }]);
+  const handleEditPermission = (permission) => {
+    setEditingPermission(permission);
+    setNewPermission({
+      name: permission.name,
+      description: permission.description,
+      category: permission.category || ''
+    });
+    setOpen(true);
+  };
+
+  const handleSavePermission = async () => {
+    try {
+      if (!newPermission.name || !newPermission.description) {
+        setError('Please fill in all required fields');
+        return;
+      }
+
+      if (editingPermission) {
+        await permissionsApi.updatePermission(editingPermission.id, newPermission);
+      } else {
+        await permissionsApi.createPermission(newPermission);
+      }
+      
+      await loadPermissions();
       setOpen(false);
+    } catch (err) {
+      setError('Failed to save permission');
+      console.error('Error saving permission:', err);
     }
   };
 
-  const handleDeletePermission = (permissionId) => {
-    setPermissions(permissions.filter(p => p.id !== permissionId));
+  const handleDeletePermission = async (permissionId) => {
+    try {
+      await permissionsApi.deletePermission(permissionId);
+      await loadPermissions();
+    } catch (err) {
+      setError('Failed to delete permission');
+      console.error('Error deleting permission:', err);
+    }
   };
+
+  if (loading) {
+    return (
+      <div style={khmerFontStyles}>
+        <MainCard title="ការគ្រប់គ្រងសិទ្ធិ">
+          <Box display="flex" justifyContent="center" p={3}>
+            <CircularProgress />
+          </Box>
+        </MainCard>
+      </div>
+    );
+  }
 
   return (
     <div style={khmerFontStyles}>
       <MainCard title="ការគ្រប់គ្រងសិទ្ធិ">
+        {error && (
+          <Alert severity="error" sx={{ mb: 2, ...khmerFontStyles }}>
+            {error}
+            <Button 
+              size="small" 
+              sx={{ mt: 1, ...khmerFontStyles }} 
+              onClick={loadInitialData}
+            >
+              ព្យាយាមម្តងទៀត
+            </Button>
+          </Alert>
+        )}
+
         <Box sx={{ mb: 3 }}>
           <Typography variant="body2" sx={{ mb: 2, ...khmerFontStyles }}>
             គ្រប់គ្រងសិទ្ធិប្រព័ន្ធ និង មើលតួនាទីណាដែលមានសិទ្ធិចូលប្រើ។
@@ -101,14 +176,33 @@ export default function PermissionManagement() {
                   </TableCell>
                   <TableCell sx={khmerFontStyles}>{permission.description}</TableCell>
                   <TableCell>
-                    <Chip label={permission.category} size="small" variant="outlined" sx={khmerFontStyles} />
+                    {permission.category ? (
+                      <Chip label={permission.category} size="small" variant="outlined" sx={khmerFontStyles} />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" sx={khmerFontStyles}>
+                        មិនកំណត់
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell>
                     {getRolesWithPermission(permission.name).map(role => (
-                      <Chip key={role} label={role} size="small" sx={{ mr: 0.5, ...khmerFontStyles }} />
+                      <Chip key={role} label={role} size="small" sx={{ mr: 0.5, mb: 0.5, ...khmerFontStyles }} />
                     ))}
+                    {getRolesWithPermission(permission.name).length === 0 && (
+                      <Typography variant="body2" color="text.secondary" sx={khmerFontStyles}>
+                        មិនមានតួនាទី
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell>
+                    <Button 
+                      variant="outlined" 
+                      size="small"
+                      onClick={() => handleEditPermission(permission)}
+                      sx={{ mr: 1, ...khmerFontStyles }}
+                    >
+                      កែសម្រួល
+                    </Button>
                     <Button 
                       variant="outlined" 
                       color="error"
@@ -126,7 +220,9 @@ export default function PermissionManagement() {
         </TableContainer>
 
         <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle sx={khmerFontStyles}>បន្ថែមសិទ្ធិថ្មី</DialogTitle>
+          <DialogTitle sx={khmerFontStyles}>
+            {editingPermission ? 'កែសម្រួលសិទ្ធិ' : 'បន្ថែមសិទ្ធិថ្មី'}
+          </DialogTitle>
           <DialogContent>
             <TextField
               fullWidth
@@ -139,6 +235,7 @@ export default function PermissionManagement() {
                 '& .MuiInputLabel-root': khmerFontStyles,
                 '& .MuiInputBase-input': khmerFontStyles
               }}
+              required
             />
             <TextField
               fullWidth
@@ -150,10 +247,11 @@ export default function PermissionManagement() {
                 '& .MuiInputLabel-root': khmerFontStyles,
                 '& .MuiInputBase-input': khmerFontStyles
               }}
+              required
             />
             <TextField
               fullWidth
-              label="ប្រភេទ"
+              label="ប្រភេទ (ស្រេចចិត្ត)"
               value={newPermission.category}
               onChange={(e) => setNewPermission({ ...newPermission, category: e.target.value })}
               sx={{
@@ -164,7 +262,9 @@ export default function PermissionManagement() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpen(false)} sx={khmerFontStyles}>បោះបង់</Button>
-            <Button onClick={handleSavePermission} variant="contained" sx={khmerFontStyles}>បន្ថែមសិទ្ធិ</Button>
+            <Button onClick={handleSavePermission} variant="contained" sx={khmerFontStyles}>
+              {editingPermission ? 'រក្សាទុក' : 'បន្ថែមសិទ្ធិ'}
+            </Button>
           </DialogActions>
         </Dialog>
       </MainCard>
