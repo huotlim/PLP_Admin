@@ -13,19 +13,14 @@ export default function AuthFooter() {
         direction={{ xs: 'column', sm: 'row' }}
         sx={{ gap: 2, justifyContent: { xs: 'center', sm: 'space-between', textAlign: { xs: 'center', sm: 'inherit' } } }}
       >
-        <Typography variant="subtitle2" color="secondary">
-          © Made with love by Team{' '}
-          <Link href="https://codedthemes.com/" target="_blank" underline="hover">
-            CodedThemes
-          </Link>
-        </Typography>
+      
 
         <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ gap: { xs: 1, sm: 3 }, textAlign: { xs: 'center', sm: 'inherit' } }}>
           <Typography
             variant="subtitle2"
             color="secondary"
             component={Link}
-            href="https://mui.com/store/terms/"
+            href="https://plp-admin-iota.vercel.app/login"
             target="_blank"
             underline="hover"
           >
@@ -35,11 +30,11 @@ export default function AuthFooter() {
             variant="subtitle2"
             color="secondary"
             component={Link}
-            href="https://mui.com/legal/privacy/"
+            href="https://plp-admin-iota.vercel.app/login"
             target="_blank"
             underline="hover"
           >
-            Privacy Policy
+            Lim Huot
           </Typography>
         </Stack>
       </Stack>
